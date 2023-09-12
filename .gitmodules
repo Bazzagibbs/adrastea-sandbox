@@ -1,0 +1,3 @@
+[submodule "src/adrastea"]
+	path = src/adrastea
+	url = git@github.com:Bazzagibbs/adrastea.git

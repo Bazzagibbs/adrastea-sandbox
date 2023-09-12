@@ -1,0 +1,13 @@
+/.vscode
+*.sublime-project
+*.sublime-workspace
+
+**.exe
+**.pdb
+
+/out
+/intermediate/*.dll
+/intermediate/*.lib
+/intermediate/*.exp
+
+*.rdbg
