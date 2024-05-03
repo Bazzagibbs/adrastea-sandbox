@@ -6,6 +6,7 @@
 **.pdb
 
 /out
+/intermediate/
 /intermediate/*.dll
 /intermediate/*.lib
 /intermediate/*.exp
