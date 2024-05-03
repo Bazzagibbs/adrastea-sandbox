@@ -9,5 +9,6 @@
 /intermediate/*.dll
 /intermediate/*.lib
 /intermediate/*.exp
+/.sentry-native/
 
 *.rdbg
