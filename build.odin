@@ -80,6 +80,8 @@ path_out_dev : cstring
 
 
 main :: proc() {
+    context.allocator = context.temp_allocator
+
     when !DEVICE_BUILD && !SIMULATOR_BUILD {
         fmt.print(USAGE)
         return
@@ -87,7 +89,7 @@ main :: proc() {
 
 
     // Find Playdate SDK
-    path_sdk = os.get_env("PLAYDATE_SDK_PATH", allocator = context.temp_allocator)
+    path_sdk = os.get_env("PLAYDATE_SDK_PATH")
     if (path_sdk == {}) {
         panic("PLAYDATE_SDK_PATH environment variable not defined.")
     }
@@ -116,14 +118,14 @@ main :: proc() {
 
 
 prepare_directories :: proc() {
-    sb := strings.builder_make(context.temp_allocator)
+    sb := strings.builder_make()
 
     err: os.Errno
 
     when SIMULATOR_BUILD {
         // int_sim
         fmt.sbprintf(&sb, "%v/%v", INTERMEDIATE_DIR, SIMULATOR_SUBDIR)
-        path_int_sim = strings.clone_to_cstring(strings.to_string(sb), context.temp_allocator)
+        path_int_sim = strings.clone_to_cstring(strings.to_string(sb))
     
         if !os.is_dir(strings.to_string(sb)) {
             err = os.make_directory(strings.to_string(sb))
@@ -136,7 +138,7 @@ prepare_directories :: proc() {
 
         // out_sim
         fmt.sbprintf(&sb, "%v/%v", OUTPUT_DIR, SIMULATOR_SUBDIR)
-        path_out_sim = strings.clone_to_cstring(strings.to_string(sb), context.temp_allocator)
+        path_out_sim = strings.clone_to_cstring(strings.to_string(sb))
        
         if !os.is_dir(strings.to_string(sb)) {
             err = os.make_directory(strings.to_string(sb))
@@ -151,7 +153,7 @@ prepare_directories :: proc() {
     when DEVICE_BUILD {
         // int_dev
         fmt.sbprintf(&sb, "%v/%v", INTERMEDIATE_DIR, DEVICE_SUBDIR)
-        path_int_dev = strings.clone_to_cstring(strings.to_string(sb), context.temp_allocator)
+        path_int_dev = strings.clone_to_cstring(strings.to_string(sb))
 
         if !os.is_dir(strings.to_string(sb)) {
             err = os.make_directory(strings.to_string(sb))
@@ -163,7 +165,7 @@ prepare_directories :: proc() {
 
         // out_dev
         fmt.sbprintf(&sb, "%v/%v", OUTPUT_DIR, DEVICE_SUBDIR)
-        path_out_dev = strings.clone_to_cstring(strings.to_string(sb), context.temp_allocator)
+        path_out_dev = strings.clone_to_cstring(strings.to_string(sb))
         
         if !os.is_dir(strings.to_string(sb)) {
             err = os.make_directory(strings.to_string(sb))
@@ -185,7 +187,7 @@ build_device :: proc() {
 build_simulator :: proc() {
     fmt.println("Building for simulator")
     
-    sb := strings.builder_make(context.temp_allocator)
+    sb := strings.builder_make()
 
     // Make directory paths
 
@@ -210,7 +212,7 @@ build_simulator :: proc() {
     
 
     // Execute Odin build
-    odin_build_command := strings.clone_to_cstring(strings.to_string(sb), allocator = context.temp_allocator)
+    odin_build_command := strings.clone_to_cstring(strings.to_string(sb))
     fmt.println(">", strings.to_string(sb))
     result := libc.system(odin_build_command)
     if result != 0 {
@@ -223,7 +225,7 @@ build_simulator :: proc() {
     fmt.sbprintf(&sb, "%v/bin/pdc %v %v/%v.pdx", path_sdk, path_int_sim, path_out_sim, PROGRAM_NAME)
     
     // Execute Playdate build
-    pd_build_command := strings.clone_to_cstring(strings.to_string(sb), allocator = context.temp_allocator)
+    pd_build_command := strings.clone_to_cstring(strings.to_string(sb))
     fmt.println(">", strings.to_string(sb))
     result = libc.system(pd_build_command)
     if result != 0 {
@@ -236,12 +238,12 @@ build_simulator :: proc() {
 run_simulator :: proc() {
     fmt.println("Running simulator")
 
-    sb := strings.builder_make(allocator = context.temp_allocator)
+    sb := strings.builder_make()
 
     fmt.sbprintf(&sb, "%v/bin/PlaydateSimulator %v/%v.pdx", path_sdk, path_out_sim, PROGRAM_NAME)
     fmt.println(">", strings.to_string(sb))
 
-    pd_sim_command := strings.clone_to_cstring(strings.to_string(sb), allocator = context.temp_allocator)
+    pd_sim_command := strings.clone_to_cstring(strings.to_string(sb))
     result := libc.system(pd_sim_command)
     if result != 0 {
         panic("Error while running Playdate Simulator")
