@@ -1,6 +1,7 @@
 package sandbox
 
 import "adrastea"
+import gfx "adrastea/graphics"
 import "adrastea/playdate/display"
 import pd "adrastea/playdate"
 import pd_sys "adrastea/playdate/system"
@@ -8,8 +9,6 @@ import pd_gfx "adrastea/playdate/graphics"
 import "core:log"
 import "core:time"
 import "core:runtime"
-
-import rend "adrastea/renderer"
 
 callback_ctx: runtime.Context
 
@@ -23,8 +22,6 @@ eventHandler :: proc "c" (api: ^pd.Api, event: pd.System_Event, args: i32) -> i3
 
             adrastea.init(api)
             adrastea.set_update_callback(update)
-            // pd.load_procs(api)
-            // pd_sys.set_update_callback(temp_update, &callback_ctx)
             start()
 
         case .terminate: 
@@ -34,75 +31,80 @@ eventHandler :: proc "c" (api: ^pd.Api, event: pd.System_Event, args: i32) -> i3
     return 0
 }
 
-// //////////////////////////////////
-// //////////////////////////////////
 
-// temp_update :: proc "c" (user_data: rawptr) -> i32 {
-//     context = (^runtime.Context)(user_data)^
-//     pd_sys.draw_fps(0, 0)
-//     return 1
-// }
+timer    : time.Stopwatch
 
-mesh: adrastea.Mesh
-timer: time.Stopwatch
 
-vec3 :: [3]f32
-vec3i :: [3]i16
-
-verts: [3]vec3 
-indices: [1]vec3i 
-start :: proc() {
-    verts = {
-        {-0.5,   0.7,   0},
-        {0.5,    0.5,   0},
-        {0.0,    -0.5,    0},
-    }
-    indices = {
-        {0, 1, 2},
-    }
-
-    mesh = adrastea.Mesh {verts[:], indices[:]}
-    display.set_refresh_rate(50)
-    rend.bound_render_target = rend.create_render_target(pd_gfx.LCD_ROWSIZE * 8, pd_gfx.LCD_ROWS)
+// Shader =====================
+Vertex_Attr :: struct {
+    position : [3]f32,
+    uv       : [2]i16,
 }
+
+Mat_Props :: struct {
+    // Texture
+}
+
+Vertex_Out :: struct {
+    position : [3]f32,
+    uv       : [2]i16,
+}
+// ============================
+
+
+shader   : gfx.Shader(Vertex_Attr, Mat_Props, Vertex_Out)
+mesh     : gfx.Mesh(Vertex_Attr)
+material : gfx.Material(type_of(shader))
+
+
+start :: proc() {
+    display.set_refresh_rate(50)
+
+    // verts = {
+    //     {-0.5,   0.7,   0},
+    //     {0.5,    0.5,   0},
+    //     {0.0,    -0.5,    0},
+    // }
+    // indices = {
+    //     {0, 1, 2},
+    // }
+
+    shader = {
+
+    }
+
+}
+
 
 shutdown :: proc() {
-    rend.destroy_render_target(&rend.bound_render_target)
+    gfx.render_pass_destroy(&render_pass)
 }
 
 
-// update :: proc() -> (should_update_display: bool) {
 update :: proc() -> (should_update_display: b32) {
-    // gfx.clear(gfx.Solid_Color.black)
-    rend.clear_render_target(&rend.bound_render_target, 0)
-    // rend.draw_mesh(&mesh)
-    
-    // Normal draw using row sweep
-    // time.stopwatch_start(&timer)
-    // for i in 0..<500{
-    //     rend.draw_mesh(&mesh)
-    // }
-    // time.stopwatch_stop(&timer)
-    // log.info("Frame time: ", time.stopwatch_duration(timer))
-    // time.stopwatch_reset(&timer)
-   
-    // // Draw using bounds sweep 
-    // time.stopwatch_start(&timer)
-    // for i in 0..<500{
-    //     rend.draw_mesh_bounds(&mesh)
-    // }
-    // time.stopwatch_stop(&timer)
-    // log.info("Frame time: ", time.stopwatch_duration(timer))
-    // time.stopwatch_reset(&timer)
-    rend.draw_mesh(&mesh)
+    gfx.render_target_clear(&gfx.bound_render_target, 0)
 
-    pd_sys.draw_fps(0, 0)
+    
+    gfx.draw_mesh(&render_pass, &mesh, &material)
+
 
     time.stopwatch_start(&timer)
-    rend.present_render_target(&rend.bound_render_target)
+    gfx.present_render_target(&gfx.bound_render_target)
     time.stopwatch_stop(&timer)
     log.info("Present time: ", time.stopwatch_duration(timer))
     time.stopwatch_reset(&timer)
+
+    pd_sys.draw_fps(0, 0)
     return true
+}
+
+
+
+// Shader test
+vertex_main :: #force_inline proc "contextless" (v_in: Vertex_Attr, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (Vertex_Out) {
+    vert := vec4 {v_in.x, v_in.y, v_in.z, 0}
+    vert = vert * render_pass_props.mvp_mat
+
+    return vert.xyz
 }
 
