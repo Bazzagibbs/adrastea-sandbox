@@ -4,7 +4,8 @@ import "adrastea"
 import gfx "adrastea/graphics"
 import "adrastea/playdate/display"
 import pd "adrastea/playdate"
-import pd_sys "adrastea/playdate/system"
+import pd_api "adrastea/playdate/bindings" // Used while Odin wrappers are being worked on
+// import pd_sys "adrastea/playdate/system"
 import pd_gfx "adrastea/playdate/graphics"
 import "core:log"
 import "core:time"
@@ -36,29 +37,30 @@ timer    : time.Stopwatch
 
 
 // Shader =====================
-Vertex_Attr :: struct {
-    position : [3]f32,
-    uv       : [2]i16,
-}
-
 Mat_Props :: struct {
     // Texture
 }
 
 Vertex_Out :: struct {
-    position : [3]f32,
-    uv       : [2]i16,
+    position  : [3]f32,
+    tex_coord : [2]f32,
 }
 // ============================
 
+main_target  : gfx.Render_Target
+forward_pass : gfx.Render_Pass
 
-shader   : gfx.Shader(Vertex_Attr, Mat_Props, Vertex_Out)
-mesh     : gfx.Mesh(Vertex_Attr)
-material : gfx.Material(type_of(shader))
+shader       := gfx.shader_create(vertex_main, fragment_main)
+material     := gfx.material_create(&shader, Mat_Props{})
+
+mesh     : gfx.Mesh
 
 
 start :: proc() {
     display.set_refresh_rate(50)
+
+    main_target  = gfx.render_target_create(pd_api.LCD_ROWS, pd_api.LCD_COLUMNS, true)
+    forward_pass = gfx.render_pass_create(&main_target)
 
     // verts = {
     //     {-0.5,   0.7,   0},
@@ -69,42 +71,49 @@ start :: proc() {
     //     {0, 1, 2},
     // }
 
-    shader = {
-
-    }
-
 }
 
 
 shutdown :: proc() {
-    gfx.render_pass_destroy(&render_pass)
+    gfx.render_pass_destroy(&forward_pass)
+    gfx.render_target_destroy(&main_target)
 }
 
 
 update :: proc() -> (should_update_display: b32) {
-    gfx.render_target_clear(&gfx.bound_render_target, 0)
+    gfx.render_target_clear(&main_target, {})
 
+    // Set up render pass transforms
     
-    gfx.draw_mesh(&render_pass, &mesh, &material)
+    gfx.draw_mesh(&forward_pass, &mesh, &material)
 
 
     time.stopwatch_start(&timer)
-    gfx.present_render_target(&gfx.bound_render_target)
+    gfx.render_target_present(&main_target)
     time.stopwatch_stop(&timer)
     log.info("Present time: ", time.stopwatch_duration(timer))
     time.stopwatch_reset(&timer)
 
-    pd_sys.draw_fps(0, 0)
+    pd_api.system.draw_fps(0, 0)
     return true
 }
 
 
 
 // Shader test
-vertex_main :: #force_inline proc "contextless" (v_in: Vertex_Attr, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (Vertex_Out) {
-    vert := vec4 {v_in.x, v_in.y, v_in.z, 0}
-    vert = vert * render_pass_props.mvp_mat
+vertex_main :: #force_inline proc "contextless" (v_in: gfx.Vertex_Attributes, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (v2f: Vertex_Out) {
+    vert_pos: [4]f32
+    vert_pos.xyz = v_in.position
 
-    return vert.xyz
+    vert_pos = render_pass_props.mvp_mat * vert_pos
+
+    v2f.position = vert_pos.xyz
+    v2f.tex_coord = v_in.tex_coord
+    return
+}
+
+fragment_main :: #force_inline proc "contextless" (v2f: Vertex_Out, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (frag_out: gfx.Fragment) {
+    frag_out.color = true
+    return
 }
 
