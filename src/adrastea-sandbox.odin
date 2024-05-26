@@ -24,7 +24,6 @@ eventHandler :: proc "c" (api: ^pd.Api, event: pd.System_Event, args: i32) -> i3
             adrastea.init(api)
             adrastea.set_update_callback(update)
             start()
-
         case .terminate: 
             context = callback_ctx
             shutdown()
@@ -59,7 +58,7 @@ mesh     : gfx.Mesh
 start :: proc() {
     display.set_refresh_rate(50)
 
-    main_target  = gfx.render_target_create(pd_api.LCD_ROWS, pd_api.LCD_COLUMNS, true)
+    main_target  = gfx.render_target_create(pd_api.LCD_ROWSIZE * 8, pd_api.LCD_ROWS, true)
     forward_pass = gfx.render_pass_create(&main_target)
 
     // verts = {
@@ -113,7 +112,7 @@ vertex_main :: proc "contextless" (v_in: gfx.Vertex_Attributes, render_pass_prop
 }
 
 fragment_main :: proc "contextless" (v2f: Vertex_Out, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (frag_out: gfx.Fragment) {
-    frag_out.color = true
+    frag_out.color = .black
     return
 }
 
