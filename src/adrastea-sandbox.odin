@@ -100,7 +100,7 @@ update :: proc() -> (should_update_display: b32) {
 
 
 // Shader test
-vertex_main :: proc "contextless" (v_in: gfx.Vertex_Attributes, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (v2f: Vertex_Out) {
+vertex_main :: proc "contextless" (v_in: gfx.Vertex_Attributes, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (v2f: gfx.Vertex_To_Fragment) {
     vert_pos: [4]f32
     vert_pos.xyz = v_in.position
 
@@ -111,7 +111,7 @@ vertex_main :: proc "contextless" (v_in: gfx.Vertex_Attributes, render_pass_prop
     return
 }
 
-fragment_main :: proc "contextless" (v2f: Vertex_Out, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (frag_out: gfx.Fragment) {
+fragment_main :: proc "contextless" (v2f: gfx.Vertex_To_Fragment, render_pass_props: ^gfx.Render_Pass_Property_Block, material_props: ^Mat_Props) -> (frag_out: gfx.Fragment) {
     frag_out.color = .black
     return
 }
