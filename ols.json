@@ -1,5 +1,5 @@
 {
 	"$schema": "https://raw.githubusercontent.com/DanielGavin/ols/master/misc/ols.schema.json",
-    "checker_args": "-default-to-nil-allocator",
+    "checker_args": "",
     "checker_path": ["src"]
 }
