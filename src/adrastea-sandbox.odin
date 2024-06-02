@@ -9,7 +9,7 @@ import pd_api "adrastea/playdate/bindings" // Used while Odin wrappers are being
 import pd_gfx "adrastea/playdate/graphics"
 import "core:log"
 import "core:time"
-import "core:runtime"
+import "base:runtime"
 
 callback_ctx: runtime.Context
 
